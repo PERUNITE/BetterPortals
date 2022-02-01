@@ -8,8 +8,16 @@ import com.lauriethefish.betterportals.bukkit.config.PortalSpawnConfig;
 import com.lauriethefish.betterportals.bukkit.config.WorldLink;
 import com.lauriethefish.betterportals.bukkit.portal.IPortalManager;
 import com.lauriethefish.betterportals.bukkit.util.MaterialUtil;
+import com.sk89q.worldedit.bukkit.BukkitAdapter;
+import com.sk89q.worldguard.LocalPlayer;
+import com.sk89q.worldguard.WorldGuard;
+import com.sk89q.worldguard.bukkit.WorldGuardPlugin;
+import com.sk89q.worldguard.internal.platform.WorldGuardPlatform;
+import com.sk89q.worldguard.protection.flags.Flags;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.entity.Player;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -57,7 +65,7 @@ public class NewPortalChecker implements IChunkChecker  {
 
                     // Make sure to check both directions for a valid spawn position
                     for(PortalDirection direction : CHECKED_DIRECTIONS) {
-                        if(isValidPortalSpawnPosition(blockPos, direction, context.getSize())) {
+                        if(isValidPortalSpawnPosition(blockPos, direction, context.getSize(), context.getCreatingPlayer())) {
                             closestDistance = distance;
                             currentClosest = new PortalSpawnPosition(blockPos, context.getSize(), direction);
                         }
@@ -69,7 +77,7 @@ public class NewPortalChecker implements IChunkChecker  {
         return currentClosest;
     }
 
-    public boolean isValidPortalSpawnPosition(Location location, PortalDirection direction, Vector size) {
+    public boolean isValidPortalSpawnPosition(Location location, PortalDirection direction, Vector size, Player player) {
         size = new Vector(size.getX() + 1, size.getY() + 1, 0.0);
 
         for(int z = -1; z <= 1; z++) {
@@ -97,6 +105,28 @@ public class NewPortalChecker implements IChunkChecker  {
         // Don't spawn portals outside the world border!
         boolean isInsideWorldBorder = location.getWorld().getWorldBorder().isInside(location);
 
-        return isFarEnoughSpaced && isInsideWorldBorder;
+        // Don't spawn in region which player can't build
+        boolean canBuildInRegion = canBuildInRegion(location, player);
+
+        return isFarEnoughSpaced && isInsideWorldBorder && canBuildInRegion;
+    }
+
+    private boolean canBuildInRegion(Location loc, Player player) {
+        if(Bukkit.getPluginManager().getPlugin("WorldGuard") == null) {
+            return true;
+        }
+
+        WorldGuardPlatform platform = WorldGuard.getInstance().getPlatform();
+        LocalPlayer wgPlayer = WorldGuardPlugin.inst().wrapPlayer(player);
+
+        boolean canBypass = platform.getSessionManager().hasBypass(wgPlayer, wgPlayer.getWorld());
+        if(canBypass) {
+            return true;
+        }
+
+        return platform
+                .getRegionContainer()
+                .createQuery()
+                .testState(BukkitAdapter.adapt(loc), wgPlayer, Flags.BLOCK_PLACE, Flags.BUILD);
     }
 }

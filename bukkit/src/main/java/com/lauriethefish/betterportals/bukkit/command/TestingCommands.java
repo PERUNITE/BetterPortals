@@ -63,7 +63,7 @@ public class TestingCommands {
     @RequiresPlayer
     public boolean testIsValidSpawnPos(Player player, PortalDirection direction, int sizeX, int sizeY) {
         Vector size = new Vector(sizeX, sizeY, 0.0);
-        player.sendMessage(String.valueOf(spawnChecker.isValidPortalSpawnPosition(player.getLocation().subtract(0.0, 1.0, 0.0), direction, size)));
+        player.sendMessage(String.valueOf(spawnChecker.isValidPortalSpawnPosition(player.getLocation().subtract(0.0, 1.0, 0.0), direction, size, player)));
 
         return true;
     }

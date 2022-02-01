@@ -13,6 +13,7 @@ import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.WorldBorder;
 import org.bukkit.block.BlockState;
+import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
@@ -44,7 +45,7 @@ public class PortalSpawner implements IPortalSpawner {
     }
 
     @Override
-    public boolean findAndSpawnDestination(@NotNull Location originPosition, @NotNull Vector originSize, Consumer<PortalSpawnPosition> onFinish) {
+    public boolean findAndSpawnDestination(@NotNull Location originPosition, @NotNull Vector originSize, Player creatingPlayer, Consumer<PortalSpawnPosition> onFinish) {
         World originWorld = originPosition.getWorld();
         assert originWorld != null;
 
@@ -58,7 +59,7 @@ public class PortalSpawner implements IPortalSpawner {
         Location destinationPosition = limitByWorldBorder(rawDestPos);
         logger.fine("Preferred destination position: %s", destinationPosition.toVector());
 
-        PortalSpawningContext context = new PortalSpawningContext(link, destinationPosition, originSize);
+        PortalSpawningContext context = new PortalSpawningContext(link, destinationPosition, originSize, creatingPlayer);
         logger.fine("Searching for existing position");
         startAsyncCheck(context, existingPortalChecker, (existingPosition) -> {
             if(existingPosition != null) {
@@ -72,7 +73,8 @@ public class PortalSpawner implements IPortalSpawner {
                     // Give up and just use the preferred destination position, which is probably in a wall, but it's our only real option
                     if(newSpawnPos == null) {
                         logger.warning("Unable to find destination for a portal. This shouldn't happen really");
-                        newSpawnPos = new PortalSpawnPosition(destinationPosition, originSize, PortalDirection.EAST);
+                        onFinish.accept(null);
+                        return;
                     }
 
                     logger.fine("Creating with new position");

@@ -124,10 +124,23 @@ public class SpawningEvents implements Listener {
         PortalSpawnPosition originPosition = new PortalSpawnPosition(bottomLeftLocation, size, direction);
         logger.fine("Attempting to spawn portal with origin %s", originPosition);
 
+        Player creatingPlayer = null;
+        if(event.getEntity() instanceof Player) {
+            creatingPlayer = (Player) event.getEntity();
+        }
+
         boolean successful = portalSpawnChecker.findAndSpawnDestination(
                 bottomLeftLocation,
                 size,
-                (destination) -> registerPortals(originPosition, destination, size)
+                creatingPlayer,
+                (destination) -> {
+                    if(destination == null) {
+                        sendMessageToLighter(event, messageConfig.getWarningMessage("noSpaceLink"));
+                        removePortalFrames(blocks);
+                        return;
+                    }
+                    registerPortals(originPosition, destination, size);
+                }
         );
 
         // If unsuccessful (thrown when worlds are not linked), log for the purposes of debugging
@@ -135,6 +148,22 @@ public class SpawningEvents implements Listener {
             logger.fine("Spawning was unsuccessful, blocking portal blocks from appearing!");
             sendMessageToLighter(event, messageConfig.getWarningMessage("noWorldLink"));
             event.setCancelled(true);
+        }
+    }
+
+    private void removePortalFrames(List<?> blocks) {
+        for(Object obj : blocks) {
+            // We have to do it this way since this is either an array of Block on 1.13 and under, or BlockState on 1.14 and up
+            Block block;
+            if(obj instanceof BlockState)   {
+                block = ((BlockState) obj).getBlock();
+            }   else    {
+                block = (Block) obj;
+            }
+
+            if(block.getType() == Material.NETHER_PORTAL) {
+                block.setType(Material.AIR);
+            }
         }
     }
 

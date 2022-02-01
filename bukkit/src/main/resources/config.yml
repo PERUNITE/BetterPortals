@@ -177,6 +177,8 @@ chatMessages:
                 BetterPortals overrides the behaviour of plugins like MultiverseNetherPortals, so these should be uninstalled unless you're in a world that is manually excluded in the config.
                 This message can be disabled in the BetterPortals config"
 
+  noSpaceLink: "This portal couldn't find space to rest on the other world"
+
   # Printed if the player lights a portal over the size limit
   # To disable, just remove all the text inside the quotes.
   portalTooBig: "This portal is too big. The current size limit is {size}. You can increase it in the BetterPortals config.
