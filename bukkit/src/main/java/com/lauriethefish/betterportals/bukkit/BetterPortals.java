@@ -8,6 +8,7 @@ import com.lauriethefish.betterportals.bukkit.config.ConfigManager;
 import com.lauriethefish.betterportals.bukkit.config.MiscConfig;
 import com.lauriethefish.betterportals.bukkit.config.ProxyConfig;
 import com.lauriethefish.betterportals.bukkit.events.IEventRegistrar;
+import com.lauriethefish.betterportals.bukkit.extension.WorldGuardExtension;
 import com.lauriethefish.betterportals.bukkit.net.IPortalClient;
 import com.lauriethefish.betterportals.bukkit.player.IPlayerDataManager;
 import com.lauriethefish.betterportals.bukkit.portal.IPortalManager;
@@ -78,6 +79,14 @@ public class BetterPortals extends JavaPlugin {
         apiImplementation.onEnable();
         firstEnable = false;
         logger.fine("Startup took %.03fms", timer.getTimeTakenMillis());
+    }
+
+    @Override
+    public void onLoad() {
+        try {
+            WorldGuardExtension.registerFlags();
+            getLogger().info("Registered flag in WorldGuard");
+        } catch (NoClassDefFoundError ignored) { }
     }
 
     private boolean loadConfig() {

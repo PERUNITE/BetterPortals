@@ -6,15 +6,10 @@ import com.lauriethefish.betterportals.api.PortalDirection;
 import com.lauriethefish.betterportals.bukkit.chunk.chunkpos.ChunkPosition;
 import com.lauriethefish.betterportals.bukkit.config.PortalSpawnConfig;
 import com.lauriethefish.betterportals.bukkit.config.WorldLink;
+import com.lauriethefish.betterportals.bukkit.extension.ExtensionHelper;
+import com.lauriethefish.betterportals.bukkit.extension.WorldGuardExtension;
 import com.lauriethefish.betterportals.bukkit.portal.IPortalManager;
 import com.lauriethefish.betterportals.bukkit.util.MaterialUtil;
-import com.sk89q.worldedit.bukkit.BukkitAdapter;
-import com.sk89q.worldguard.LocalPlayer;
-import com.sk89q.worldguard.WorldGuard;
-import com.sk89q.worldguard.bukkit.WorldGuardPlugin;
-import com.sk89q.worldguard.internal.platform.WorldGuardPlatform;
-import com.sk89q.worldguard.protection.flags.Flags;
-import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -106,27 +101,11 @@ public class NewPortalChecker implements IChunkChecker  {
         boolean isInsideWorldBorder = location.getWorld().getWorldBorder().isInside(location);
 
         // Don't spawn in region which player can't build
-        boolean canBuildInRegion = canBuildInRegion(location, player);
+        boolean canBuildInRegion = true;
+        if(ExtensionHelper.isPluginLoaded("WorldGuard")) {
+            canBuildInRegion = WorldGuardExtension.canSpawnPortalInRegion(location, player);
+        }
 
         return isFarEnoughSpaced && isInsideWorldBorder && canBuildInRegion;
-    }
-
-    private boolean canBuildInRegion(Location loc, Player player) {
-        if(Bukkit.getPluginManager().getPlugin("WorldGuard") == null) {
-            return true;
-        }
-
-        WorldGuardPlatform platform = WorldGuard.getInstance().getPlatform();
-        LocalPlayer wgPlayer = WorldGuardPlugin.inst().wrapPlayer(player);
-
-        boolean canBypass = platform.getSessionManager().hasBypass(wgPlayer, wgPlayer.getWorld());
-        if(canBypass) {
-            return true;
-        }
-
-        return platform
-                .getRegionContainer()
-                .createQuery()
-                .testState(BukkitAdapter.adapt(loc), wgPlayer, Flags.BLOCK_PLACE, Flags.BUILD);
     }
 }
